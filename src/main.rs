@@ -1,6 +1,7 @@
 extern crate reqwest;
 extern crate scraper;
 
+use std::cmp::Ordering;
 use std::error::Error;
 use std::string::String;
 use scraper::{Html,Selector,ElementRef};
@@ -28,10 +29,30 @@ fn main() -> Result<(), Box<dyn Error>> {
     return Ok(())
 }
 
+#[derive(PartialEq, Eq, PartialOrd)]
 struct ItemInfo {
-    name: String,
-    price: i32,
-    amount: i32,
+    name: Option<String>,
+    price: Option<i32>,
+    amount: Option<i32>,
+    refine: Option<i8>,
+    properties: Option<String>,
+}
+
+impl Ord for ItemInfo {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let price_ord = self.price.cmp(&other.price);
+        if price_ord == Ordering::Equal {
+            let amount_ord = self.amount.cmp(&other.amount);
+            if amount_ord == Ordering::Less {
+                return Ordering::Greater;
+            } else if amount_ord == Ordering::Greater {
+                return Ordering::Less;
+            } else {
+                return Ordering::Equal;
+            };
+        }
+        return price_ord;
+    }
 }
 
 fn get_lowest_price(item_id: i32) -> Result<ItemInfo, Box<dyn Error>> {
@@ -50,10 +71,24 @@ fn get_lowest_price(item_id: i32) -> Result<ItemInfo, Box<dyn Error>> {
         return el.value().attr("data-order").unwrap_or("0").parse::<i32>().unwrap_or(0);
     }
 
+    let items_iterator = document.select(&rows_selector);
+    let item_name = document.select(&name_selector).next().map(|name_el: ElementRef| { name_el.inner_html() });
+
+    let items: Vec<ItemInfo> = items_iterator.map(|item_element: scraper::ElementRef| {
+        return ItemInfo{
+            name: item_name,
+            price: item_element.select(&price_selector).nth(0).map(get_number_from_table),
+            amount: item_element.select(&amount_selector).nth(0).map(get_number_from_table),
+            refine: None,
+            properties: None,
+        };
+    }).collect();
+
+    items.sort();
+
     let cheapest: scraper::ElementRef = document.select(&rows_selector).last().unwrap();
 
     let maybe_name: Option<ElementRef> = document.select(&name_selector).next();
-    let name = maybe_name.map(|name_el: ElementRef| { name_el.inner_html() }).unwrap_or("<Couldnt find item name>".to_string());
 
     let maybe_price: Option<ElementRef> = cheapest.select(&price_selector).nth(0);
     let price = maybe_price.map(get_number_from_table).unwrap_or(0);
