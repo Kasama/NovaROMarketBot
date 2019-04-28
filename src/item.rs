@@ -29,3 +29,10 @@ impl PartialOrd for ItemInfo {
         return Some(price_ord);
     }
 }
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub struct IdInfo {
+    pub name: String,
+    pub id: i32,
+    pub item_type: String,
+}
