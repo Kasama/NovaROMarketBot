@@ -54,13 +54,13 @@ pub fn get_market_entries(item_id: i32) -> Vec<ItemInfo> {
             response.text()
         });
 
-    return match maybe_body {
-        Ok(body) => get_items(body),
+    match maybe_body {
+        Ok(ref body) => get_items(body),
         Err(_) => vec![],
-    };
+    }
 }
 
-fn get_items(body: String) -> Vec<ItemInfo> {
+fn get_items(body: &str) -> Vec<ItemInfo> {
     let document = Html::parse_document(&body);
 
     let rows_selector = Selector::parse("#itemtable > tbody > tr").unwrap();
