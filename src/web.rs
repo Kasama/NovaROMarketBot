@@ -1,10 +1,11 @@
-extern crate reqwest;
+pub mod selectors;
 
+use mdo::option::*;
 use crate::item::{ItemInfo,ItemType,IdInfo};
 use std::string::String;
 use scraper::{Html,Selector,ElementRef};
 
-pub fn get_ids_by_name(item_name: String) -> Vec<IdInfo> {
+pub fn get_ids_by_name(item_name: &str) -> Vec<IdInfo> {
 
     let name = item_name.replace(" ", "+").to_lowercase();
     let url = format!("https://www.novaragnarok.com/?module=item&action=index&type=&name={}", name);
@@ -30,25 +31,20 @@ pub fn get_ids_by_name(item_name: String) -> Vec<IdInfo> {
                 let maybe_type = item_element.select(&type_selector).nth(0)
                     .map(|i| String::from(i.inner_html().trim()));
 
-                return match (maybe_id, maybe_name, maybe_type) {
-                    (Some(id), Some(name), Some(item_type)) => Some(IdInfo {
-                        id,
-                        name,
-                        item_type,
-                    }),
-                    _ => {
-                        return None;
-                    },
-                };
+                mdo! {
+                    id =<< maybe_id;
+                    name =<< maybe_name;
+                    item_type =<< maybe_type;
+                    ret ret(IdInfo{
+                        id, name, item_type
+                    })
+                }
             }).flatten().collect();
 
-            return Ok(items);
+            Ok(items)
         });
 
-    return match maybe_vec {
-        Ok(vec) => vec,
-        Err(_) => vec![],
-    }
+    maybe_vec.unwrap_or(vec![])
 }
 
 pub fn get_market_entries(item_id: i32) -> Vec<ItemInfo> {

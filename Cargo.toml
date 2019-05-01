@@ -1,11 +1,13 @@
 [package]
-name = "novaro-market-bot"
+name = "novaro_bot"
 version = "0.1.0"
 authors = ["Kasama <robertoaall@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-scraper = "0.10.0"
-reqwest = "0.9.15"
-telegram-bot-fork = "0.7.7"
+scraper = "0.10"
+reqwest = "0.9"
+telegram-bot = { git = "https://github.com/telegram-rs/telegram-bot", branch = "master" }
+tokio-core = "0.1"
 mdo = "*"
+futures = "0.1"
